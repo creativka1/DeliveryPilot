@@ -1,0 +1,210 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Business {
+  id                    String             @id @default(cuid())
+  name                  String
+  timezone              String             @default("Asia/Tashkent")
+  notificationsEnabled  Boolean            @default(true)
+  acknowledgmentMinutes Int                @default(5)
+  locations             Location[]
+  employees             Employee[]
+  deliveries            ExpectedDelivery[]
+  cameras               CameraDevice[]
+  events                RingEvent[]
+  tasks                 ReceivingTask[]
+  audit                 AuditLog[]
+  notifications         Notification[]
+  checks                IntegrationCheck[]
+}
+
+model Location {
+  id         String             @id @default(cuid())
+  businessId String
+  business   Business           @relation(fields: [businessId], references: [id])
+  name       String
+  cameras    CameraDevice[]
+  deliveries ExpectedDelivery[]
+  employees  EmployeeLocation[]
+
+  @@unique([businessId, name])
+}
+
+model Employee {
+  id            String             @id @default(cuid())
+  businessId    String
+  business      Business           @relation(fields: [businessId], references: [id])
+  name          String
+  role          String             @default("RECEIVER")
+  available     Boolean            @default(true)
+  archived      Boolean            @default(false)
+  locations     EmployeeLocation[]
+  deliveries    ExpectedDelivery[]
+  tasks         ReceivingTask[]
+  notifications Notification[]
+  createdAt     DateTime           @default(now())
+}
+
+model EmployeeLocation {
+  employeeId String
+  locationId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([employeeId, locationId])
+}
+
+model CameraDevice {
+  id            String      @id @default(cuid())
+  businessId    String
+  business      Business    @relation(fields: [businessId], references: [id])
+  externalId    String      @unique
+  name          String
+  source        String
+  locationId    String?
+  location      Location?   @relation(fields: [locationId], references: [id])
+  online        Boolean?
+  supportsVideo Boolean     @default(false)
+  lastSeenAt    DateTime?
+  events        RingEvent[]
+}
+
+model ExpectedDelivery {
+  id          String              @id @default(cuid())
+  businessId  String
+  business    Business            @relation(fields: [businessId], references: [id])
+  supplier    String
+  reference   String
+  windowStart DateTime
+  windowEnd   DateTime
+  locationId  String
+  location    Location            @relation(fields: [locationId], references: [id])
+  employeeId  String?
+  employee    Employee?           @relation(fields: [employeeId], references: [id])
+  notes       String              @default("")
+  status      String              @default("EXPECTED")
+  archived    Boolean             @default(false)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  receivedAt  DateTime?
+  candidates  DeliveryCandidate[]
+  task        ReceivingTask?
+  audit       AuditLog[]
+
+  @@index([businessId, windowStart, windowEnd])
+}
+
+model RingEvent {
+  id               String              @id @default(cuid())
+  businessId       String
+  business         Business            @relation(fields: [businessId], references: [id])
+  source           String
+  requestId        String
+  externalDeviceId String
+  cameraId         String?
+  camera           CameraDevice?       @relation(fields: [cameraId], references: [id])
+  type             String
+  occurredAt       DateTime
+  receivedAt       DateTime            @default(now())
+  matchStatus      String              @default("UNMATCHED")
+  summary          String
+  payload          String
+  candidates       DeliveryCandidate[]
+  audit            AuditLog[]
+
+  @@unique([source, requestId])
+  @@index([businessId, receivedAt])
+}
+
+model DeliveryCandidate {
+  id         String           @id @default(cuid())
+  eventId    String
+  event      RingEvent        @relation(fields: [eventId], references: [id])
+  deliveryId String
+  delivery   ExpectedDelivery @relation(fields: [deliveryId], references: [id])
+  score      Int
+  reasons    String
+  selected   Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  @@unique([eventId, deliveryId])
+}
+
+model ReceivingTask {
+  id             String           @id @default(cuid())
+  businessId     String
+  business       Business         @relation(fields: [businessId], references: [id])
+  deliveryId     String           @unique
+  delivery       ExpectedDelivery @relation(fields: [deliveryId], references: [id])
+  candidateId    String           @unique
+  employeeId     String?
+  employee       Employee?        @relation(fields: [employeeId], references: [id])
+  status         String           @default("PENDING")
+  assignedAt     DateTime         @default(now())
+  acknowledgedAt DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  issue          String?
+  audit          AuditLog[]
+  notifications  Notification[]
+
+  @@index([businessId, status])
+}
+
+model AuditLog {
+  id         String            @id @default(cuid())
+  businessId String
+  business   Business          @relation(fields: [businessId], references: [id])
+  actorId    String
+  actorName  String
+  action     String
+  message    String
+  source     String
+  deliveryId String?
+  delivery   ExpectedDelivery? @relation(fields: [deliveryId], references: [id])
+  eventId    String?
+  event      RingEvent?        @relation(fields: [eventId], references: [id])
+  taskId     String?
+  task       ReceivingTask?    @relation(fields: [taskId], references: [id])
+  createdAt  DateTime          @default(now())
+
+  @@index([businessId, createdAt])
+}
+
+model Notification {
+  id         String         @id @default(cuid())
+  businessId String
+  business   Business       @relation(fields: [businessId], references: [id])
+  employeeId String
+  employee   Employee       @relation(fields: [employeeId], references: [id])
+  taskId     String?
+  task       ReceivingTask? @relation(fields: [taskId], references: [id])
+  message    String
+  readAt     DateTime?
+  createdAt  DateTime       @default(now())
+}
+
+model IntegrationCheck {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  endpoint   String
+  status     Int?
+  success    Boolean
+  message    String
+  createdAt  DateTime @default(now())
+}
+
+model StreamSession {
+  id          String   @id @default(cuid())
+  employeeId  String
+  deviceId    String
+  upstreamUrl String
+  createdAt   DateTime @default(now())
+}

@@ -1,0 +1,99 @@
+{
+  "verified": true,
+  "transport": "loopback HTTP",
+  "server": "Next.js production build",
+  "database": "isolated temporary SQLite",
+  "source": "SIMULATED_RING_WEBHOOK",
+  "realRingApiCalled": false,
+  "generatedAt": "2026-10-20T16:03:20.610Z",
+  "checks": [
+    {
+      "name": "Production app started on loopback with an isolated database",
+      "passed": true
+    },
+    {
+      "name": "Invalid signature rejected without any workflow writes",
+      "passed": true,
+      "httpStatus": 401
+    },
+    {
+      "name": "Raw body byte tampering rejected",
+      "passed": true,
+      "httpStatus": 401
+    },
+    {
+      "name": "Correctly signed wrong-account payload rejected",
+      "passed": true,
+      "httpStatus": 403
+    },
+    {
+      "name": "Correctly signed simulated webhook authenticated over real HTTP",
+      "passed": true,
+      "httpStatus": 200,
+      "elapsedMs": 66
+    },
+    {
+      "name": "Event normalization preserves source, request ID, timestamp, event type, and camera mapping",
+      "passed": true
+    },
+    {
+      "name": "Automatic entrance/time matching produces Northline candidate and preserves manager review",
+      "passed": true
+    },
+    {
+      "name": "Generated event and original audit evidence are labeled as simulation",
+      "passed": true
+    },
+    {
+      "name": "Duplicate request ID returns success without repeated side effects",
+      "passed": true,
+      "httpStatus": 200
+    },
+    {
+      "name": "Manager selection assigns the existing designated employee Alex",
+      "passed": true,
+      "httpStatus": 201
+    },
+    {
+      "name": "Assigned task notification is visible in Alex's real HTTP state response",
+      "passed": true
+    },
+    {
+      "name": "Match selection and task assignment have actor-attributed audit entries",
+      "passed": true
+    },
+    {
+      "name": "Replay after assignment does not recreate a task or notification",
+      "passed": true
+    },
+    {
+      "name": "Employee acknowledgment, start, and confirmation still work with actual timestamps",
+      "passed": true
+    },
+    {
+      "name": "Unknown camera activity is retained as unmatched",
+      "passed": true
+    },
+    {
+      "name": "Ambiguous matches remain unselected and require manager review",
+      "passed": true
+    },
+    {
+      "name": "Concurrent HTTP retries are idempotent",
+      "passed": true
+    },
+    {
+      "name": "Simulated lifecycle notification cannot change the real-camera fixture's online status",
+      "passed": true
+    },
+    {
+      "name": "UI state separates simulated events, omits raw payloads/keys, and records no fake Ring API success",
+      "passed": true
+    },
+    {
+      "name": "Unrelated existing delivery and employee records remain unchanged",
+      "passed": true
+    }
+  ],
+  "checksPassed": 20
+}
